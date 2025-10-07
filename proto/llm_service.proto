@@ -1,0 +1,145 @@
+syntax = "proto3";
+
+package nexus.llm.v1;
+
+option go_package = "github.com/mrblind/nexus-agent/proto/llm/v1;llmv1";
+
+import "google/protobuf/timestamp.proto";
+
+// LLM 服务定义
+service LLMService {
+  // 执行 LLM 代理请求 (非流式)
+  rpc ExecuteAgent(ExecuteAgentRequest) returns (ExecuteAgentResponse);
+  
+  // 执行 LLM 代理请求 (流式)
+  rpc ExecuteAgentStream(ExecuteAgentRequest) returns (stream ExecuteAgentStreamResponse);
+  
+  // 获取支持的模型列表
+  rpc GetSupportedModels(GetSupportedModelsRequest) returns (GetSupportedModelsResponse);
+  
+  // 验证配置
+  rpc ValidateConfig(ValidateConfigRequest) returns (ValidateConfigResponse);
+  
+  // 健康检查
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// 消息定义
+message Message {
+  string role = 1;        // user, assistant, system
+  string content = 2;     // 消息内容
+  string image_url = 3;   // 可选的图片 URL
+}
+
+
+// 工具调用定义
+message ToolCall {
+  string id = 1;
+  string type = 2;
+  ToolFunction function = 3;
+}
+
+message ToolFunction {
+  string name = 1;
+  string arguments = 2;
+}
+
+// 使用量统计
+message Usage {
+  int32 prompt_tokens = 1;
+  int32 completion_tokens = 2;
+  int32 total_tokens = 3;
+}
+
+// 执行代理请求
+message ExecuteAgentRequest {
+  string session_id = 1;
+  repeated Message messages = 2;
+  string provider = 3;      // 提供商名称，如: "openai", "deepseek", "anthropic"
+  string model = 4;         // 模型名称，如: "gpt-4", "deepseek-chat", "claude-3-sonnet"
+  double temperature = 5;   // 可选：温度参数
+  int32 max_tokens = 6;     // 可选：最大令牌数
+  repeated string tools = 7; // 可选的工具列表
+}
+
+// 执行代理响应
+message ExecuteAgentResponse {
+  string session_id = 1;
+  Message message = 2;
+  Usage usage = 3;
+  double cost = 4;
+  double execution_time = 5;
+  repeated ToolCall tool_calls = 6;
+  google.protobuf.Timestamp timestamp = 7;
+}
+
+// 流式执行代理响应
+message ExecuteAgentStreamResponse {
+  string session_id = 1;
+  
+  // 流式响应类型
+  enum StreamType {
+    CONTENT_DELTA = 0;    // 内容增量
+    TOOL_CALL = 1;        // 工具调用
+    USAGE_UPDATE = 2;     // 使用量更新
+    FINAL_RESPONSE = 3;   // 最终响应
+    ERROR = 4;            // 错误
+  }
+  
+  StreamType type = 2;
+  
+  // 根据类型使用不同字段
+  string content_delta = 3;     // 当 type = CONTENT_DELTA 时使用
+  ToolCall tool_call = 4;       // 当 type = TOOL_CALL 时使用
+  Usage usage = 5;              // 当 type = USAGE_UPDATE 或 FINAL_RESPONSE 时使用
+  double cost = 6;              // 当 type = FINAL_RESPONSE 时使用
+  double execution_time = 7;    // 当 type = FINAL_RESPONSE 时使用
+  string error_message = 8;     // 当 type = ERROR 时使用
+  google.protobuf.Timestamp timestamp = 9;
+}
+
+// 获取支持的模型请求
+message GetSupportedModelsRequest {
+  // 空请求
+}
+
+// 提供商信息
+message ProviderInfo {
+  string name = 1;
+  repeated string models = 2;
+  string default_model = 3;
+  bool requires_key = 4;
+  map<string, double> pricing = 5;  // 模型定价信息
+}
+
+// 获取支持的模型响应
+message GetSupportedModelsResponse {
+  map<string, ProviderInfo> providers = 1;
+}
+
+// 验证配置请求
+message ValidateConfigRequest {
+  string provider = 1;      // 提供商名称
+  string model = 2;         // 模型名称
+  double temperature = 3;   // 温度参数
+  int32 max_tokens = 4;     // 最大令牌数
+}
+
+// 验证配置响应
+message ValidateConfigResponse {
+  bool valid = 1;
+  string error_message = 2;
+}
+
+// 健康检查请求
+message HealthCheckRequest {
+  // 空请求
+}
+
+// 健康检查响应
+message HealthCheckResponse {
+  string status = 1;
+  string version = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  map<string, string> details = 4;
+}

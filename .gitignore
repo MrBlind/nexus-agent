@@ -226,6 +226,14 @@ node_modules/
 package-lock.json
 yarn.lock
 
+# ==================== Private Planning ====================
+# Personal planning and decision-making documents
+# These contain personal thoughts, job-seeking strategies, and private considerations
+planning/
+days/
+*.planning.md
+*_PRIVATE.md
+
 # ==================== Misc ====================
 # Backup files
 *.bak
