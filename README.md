@@ -67,7 +67,8 @@ git clone https://github.com/yourusername/nexus-agent.git
 cd nexus-agent
 
 # Start all services
-docker-compose -f deploy/compose/docker-compose.yaml up
+# docker-compose -f deploy/compose/docker-compose.yaml up
+make run
 
 # The platform will be available at:
 # - Web UI: http://localhost:3000
